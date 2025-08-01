@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import { ProgressSteps } from "./ProgressSteps";
 import { UserDetailsForm } from "./forms/UserDetailsForm";
 import { FoodDetailsForm } from "./forms/FoodDetailsForm";
@@ -76,15 +77,13 @@ export const OrderForm = () => {
   const handleOrderSubmit = async (data: FormData) => {
     try {
       // Here you would make the actual API call to your backend
-      const response = await fetch('/api/orders', {
-        method: 'POST',
+      const response = await axios.post('/api/orders', data, {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
       });
 
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         setIsOrderComplete(true);
       } else {
         throw new Error('Failed to submit order');
