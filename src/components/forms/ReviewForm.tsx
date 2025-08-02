@@ -32,7 +32,7 @@ interface FormData {
 interface ReviewFormProps {
   data: FormData;
   onBack: () => void;
-  onSubmit: (data: FormData) => void;
+  onSubmit: (data: FormData & { orderSummary: any; timestamp: string }) => Promise<void>;
 }
 
 const priorityLabels = {
@@ -47,43 +47,32 @@ export const ReviewForm = ({ data, onBack, onSubmit }: ReviewFormProps) => {
 
   const deliveryPrice = priorityLabels[data.deliveryDetails.priority].price;
   const subtotal = data.foodDetails.totalPrice;
-  const tax = subtotal * 0.08; // 8% tax
+  const tax = subtotal * 0.08;
   const totalAmount = subtotal + deliveryPrice + tax;
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    
-    try {
-      // Simulate API call
-      const orderData = {
-        ...data,
-        orderSummary: {
-          subtotal,
-          deliveryPrice,
-          tax,
-          total: totalAmount
-        },
-        timestamp: new Date().toISOString()
-      };
 
-      // Here you would make the actual API call
-      console.log("Submitting order:", orderData);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // For demo purposes, we'll just show success
-      toast({
-        title: "Order Placed Successfully! 🎉",
-        description: `Your order #${Math.random().toString(36).substr(2, 9).toUpperCase()} has been placed and will be delivered in ${priorityLabels[data.deliveryDetails.priority].time}.`,
-      });
-      
-      onSubmit(orderData);
-    } catch (error) {
+    const orderData = {
+      ...data,
+      orderSummary: {
+        subtotal,
+        deliveryPrice,
+        tax,
+        total: totalAmount
+      },
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      await onSubmit(orderData); // Real API submission handled in OrderForm
+    } catch (error: any) {
       toast({
         title: "Order Failed",
-        description: "There was an error placing your order. Please try again.",
-        variant: "destructive",
+        description:
+          error?.response?.data?.message ||
+          "There was an error placing your order. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
@@ -100,7 +89,7 @@ export const ReviewForm = ({ data, onBack, onSubmit }: ReviewFormProps) => {
         <p className="text-muted-foreground">Please review all details before placing your order</p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* User Details Section */}
+        {/* User Details */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-primary" />
@@ -117,7 +106,7 @@ export const ReviewForm = ({ data, onBack, onSubmit }: ReviewFormProps) => {
 
         <Separator />
 
-        {/* Food Details Section */}
+        {/* Food Details */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <UtensilsCrossed className="w-5 h-5 text-primary" />
@@ -140,16 +129,14 @@ export const ReviewForm = ({ data, onBack, onSubmit }: ReviewFormProps) => {
 
         <Separator />
 
-        {/* Delivery Details Section */}
+        {/* Delivery Details */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-primary" />
             <h3 className="text-lg font-semibold">Delivery Information</h3>
           </div>
           <div className="bg-orange-light p-4 rounded-lg">
-            <p className="font-medium">
-              {data.deliveryDetails.address}
-            </p>
+            <p className="font-medium">{data.deliveryDetails.address}</p>
             <p className="text-sm text-muted-foreground">
               {data.deliveryDetails.city}, {data.deliveryDetails.zipCode}
             </p>
@@ -195,20 +182,21 @@ export const ReviewForm = ({ data, onBack, onSubmit }: ReviewFormProps) => {
           </div>
         </div>
 
+        {/* Action Buttons */}
         <div className="flex gap-3 pt-4">
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             onClick={onBack}
-            variant="outline" 
+            variant="outline"
             size="lg"
             className="flex-1"
             disabled={isSubmitting}
           >
             Back
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
-            variant="success" 
+            variant="success"
             size="lg"
             className="flex-1"
             disabled={isSubmitting}
