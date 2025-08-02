@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import { ProgressSteps } from "./ProgressSteps";
 import { UserDetailsForm } from "./forms/UserDetailsForm";
 import { FoodDetailsForm } from "./forms/FoodDetailsForm";
@@ -74,6 +75,7 @@ export const OrderForm = () => {
     setCurrentStep(3);
   };
 
+<<<<<<< HEAD
   const BASE_URL='http://localhost:8080/api/orders'
 
 const handleOrderSubmit = async (data: FormData) => {
@@ -88,6 +90,25 @@ const handleOrderSubmit = async (data: FormData) => {
       setIsOrderComplete(true);
     } else {
       throw new Error('Failed to submit order');
+=======
+  const handleOrderSubmit = async (data: FormData) => {
+    try {
+      // Here you would make the actual API call to your backend
+      const response = await axios.post('/api/orders', data, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        setIsOrderComplete(true);
+      } else {
+        throw new Error('Failed to submit order');
+      }
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      // Error handling is done in the ReviewForm component
+>>>>>>> dae1d205c1bec531e6da25bfef1966e1c8e06803
     }
   } catch (error) {
     console.error('Error submitting order:', error);
