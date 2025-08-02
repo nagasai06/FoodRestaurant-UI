@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, ChefHat } from "lucide-react";
+import { Clock, Users, ChefHat, X } from "lucide-react";
 import { Order } from "@/pages/KitchenScreen";
 
 interface OrderCardProps {
@@ -10,9 +10,10 @@ interface OrderCardProps {
   isActive: boolean;
   onStart: () => void;
   onComplete: (totalTime: number) => void;
+  onCancel: () => void;
 }
 
-export const OrderCard = ({ order, isActive, onStart, onComplete }: OrderCardProps) => {
+export const OrderCard = ({ order, isActive, onStart, onComplete, onCancel }: OrderCardProps) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [startY, setStartY] = useState(0);
   const [currentY, setCurrentY] = useState(0);
@@ -113,6 +114,15 @@ export const OrderCard = ({ order, isActive, onStart, onComplete }: OrderCardPro
             {order.customerName}
           </CardTitle>
           <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCancel();
+              }}
+              className="p-1 rounded-full hover:bg-red-100 text-red-500 hover:text-red-700 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
             <Badge variant={isActive ? "default" : "secondary"}>
               {order.status.toUpperCase()}
             </Badge>
@@ -129,21 +139,21 @@ export const OrderCard = ({ order, isActive, onStart, onComplete }: OrderCardPro
       <CardContent>
         <div className="space-y-3">
           {order.items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded-lg">
-              <div className="flex items-center gap-3">
-                <ChefHat className="h-4 w-4 text-orange-primary" />
-                <div>
+            <div key={item.id} className="flex flex-col space-y-2 p-3 bg-white rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ChefHat className="h-4 w-4 text-orange-primary" />
                   <p className="font-medium">{item.name}</p>
-                  {item.specialInstructions && (
-                    <p className="text-sm text-gray-600 italic">
-                      {item.specialInstructions}
-                    </p>
-                  )}
                 </div>
+                <Badge variant="outline">
+                  x{item.quantity}
+                </Badge>
               </div>
-              <Badge variant="outline" className="ml-2">
-                x{item.quantity}
-              </Badge>
+              {item.specialInstructions && (
+                <p className="text-sm text-gray-600 italic pl-7">
+                  {item.specialInstructions}
+                </p>
+              )}
             </div>
           ))}
         </div>

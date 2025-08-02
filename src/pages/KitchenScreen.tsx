@@ -76,6 +76,13 @@ const KitchenScreen = () => {
     // await axios.post('/api/orders/complete', { orderId, totalTime });
   };
 
+  const handleOrderCancel = (orderId: string) => {
+    setOrders(prev => prev.filter(order => order.id !== orderId));
+    
+    // TODO: Send cancellation to backend
+    // await axios.post('/api/orders/cancel', { orderId });
+  };
+
   // Sort orders: preparing first, then pending by creation time
   const sortedOrders = [...orders].sort((a, b) => {
     if (a.status === 'preparing' && b.status === 'pending') return -1;
@@ -113,6 +120,7 @@ const KitchenScreen = () => {
             isActive={order.status === 'preparing'}
             onStart={() => handleOrderStart(order.id)}
             onComplete={(totalTime) => handleOrderComplete(order.id, totalTime)}
+            onCancel={() => handleOrderCancel(order.id)}
           />
         ))}
         
