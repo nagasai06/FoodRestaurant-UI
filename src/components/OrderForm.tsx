@@ -5,7 +5,7 @@ import { UserDetailsForm } from "./forms/UserDetailsForm";
 import { FoodDetailsForm } from "./forms/FoodDetailsForm";
 import { DeliveryDetailsForm } from "./forms/DeliveryDetailsForm";
 import { ReviewForm } from "./forms/ReviewForm";
-import axios from 'axios';
+//import axios from 'axios';
 
 interface FormData {
   userDetails: {
@@ -75,26 +75,12 @@ export const OrderForm = () => {
     setCurrentStep(3);
   };
 
-<<<<<<< HEAD
-  const BASE_URL='http://localhost:8080/api/orders'
+  const BASE_URL="https://springboot-backend-134213214273.us-central1.run.app";
 
-const handleOrderSubmit = async (data: FormData) => {
-  try {
-    const response = await axios.post(BASE_URL, data, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (response.status === 200 || response.status === 201) {
-      setIsOrderComplete(true);
-    } else {
-      throw new Error('Failed to submit order');
-=======
   const handleOrderSubmit = async (data: FormData) => {
     try {
       // Here you would make the actual API call to your backend
-      const response = await axios.post('/api/orders', data, {
+      const response = await axios.post(`${BASE_URL}/api/orders`, data, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -108,12 +94,8 @@ const handleOrderSubmit = async (data: FormData) => {
     } catch (error) {
       console.error('Error submitting order:', error);
       // Error handling is done in the ReviewForm component
->>>>>>> dae1d205c1bec531e6da25bfef1966e1c8e06803
     }
-  } catch (error) {
-    console.error('Error submitting order:', error);
-    throw error; // Add this line to re-throw the error
-  }
+     
 };
 
 

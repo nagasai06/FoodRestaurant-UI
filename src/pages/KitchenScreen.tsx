@@ -1,135 +1,96 @@
-
+// KitchenScreen.tsx
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { OrderCard } from "@/components/kitchen/OrderCard";
 
 export interface OrderItem {
-  id: string;
   name: string;
   quantity: number;
   specialInstructions?: string;
 }
 
 export interface Order {
-  id: string;
+  id: String;
   customerName: string;
-  items: OrderItem[];
-  estimatedTime: number; // in minutes
-  status: 'pending' | 'preparing' | 'completed';
+  items: OrderItem[] | string[];
+  category: string;
+  status: 'pending' | 'preparing' | 'completed' | null;
   createdAt: Date;
   startedAt?: Date;
   completedAt?: Date;
+  estimatedTime: number;
 }
 
+const BASE_URL="https://springboot-backend-134213214273.us-central1.run.app";
+
 const KitchenScreen = () => {
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: "ORD001",
-      customerName: "John Doe",
-      items: [
-        { id: "1", name: "Margherita Pizza", quantity: 2 },
-        { id: "2", name: "Caesar Salad", quantity: 1, specialInstructions: "No croutons" }
-      ],
-      estimatedTime: 15,
-      status: 'pending',
-      createdAt: new Date(Date.now() - 5 * 60 * 1000) // 5 minutes ago
-    },
-    {
-      id: "ORD002", 
-      customerName: "Jane Smith",
-      items: [
-        { id: "3", name: "Chicken Burger", quantity: 1 },
-        { id: "4", name: "French Fries", quantity: 1 }
-      ],
-      estimatedTime: 12,
-      status: 'preparing',
-      createdAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
-      startedAt: new Date(Date.now() - 8 * 60 * 1000) // started 8 minutes ago
-    },
-    {
-      id: "ORD003",
-      customerName: "Mike Johnson", 
-      items: [
-        { id: "5", name: "Pasta Carbonara", quantity: 1 },
-        { id: "6", name: "Garlic Bread", quantity: 2 }
-      ],
-      estimatedTime: 18,
-      status: 'pending',
-      createdAt: new Date(Date.now() - 2 * 60 * 1000) // 2 minutes ago
-    }
-  ]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  const handleOrderStart = (orderId: string) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId 
-        ? { ...order, status: 'preparing', startedAt: new Date() }
-        : order
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const res = await axios.get(`${BASE_URL}/api/ordersall`);
+      
+      const fetched: Order[] = res.data.map((o: any) => ({
+        ...o,
+        status: o.status ?? "pending",
+        createdAt: new Date(o.createdAt),
+        startedAt: o.startedAt ? new Date(o.startedAt) : undefined,
+        completedAt: o.completedAt ? new Date(o.completedAt) : undefined,
+        items: o.items.map((item: any) => typeof item === 'string' ? { name: item, quantity: 1 } : item),
+        estimatedTime: 15,
+      }));
+      setOrders(fetched);
+    };
+    fetchOrders();
+  }, []);
+
+  const handleStart = async (id: String) => {
+    setOrders(prev => prev.map(order =>
+      order.id === id ? { ...order, status: "preparing", startedAt: new Date() } : order
     ));
+    await axios.post(`${BASE_URL}/api/orders/${id}/start`);
   };
 
-  const handleOrderComplete = async (orderId: string, totalTime: number) => {
-    // Here you would make API call to backend to update order status and time
-    console.log(`Order ${orderId} completed in ${totalTime} minutes`);
-    
-    setOrders(prev => prev.filter(order => order.id !== orderId));
-    
-    // TODO: Send completion data to backend
-    // await axios.post('/api/orders/complete', { orderId, totalTime });
+  const handleComplete = async (id: String, timeTaken: number) => {
+    setOrders(prev => {
+      const updated = prev.filter(o => o.id !== id);
+      if (updated.length > 0) {
+        const next = updated.find(o => o.status === 'pending');
+        if (next) {
+          next.status = 'preparing';
+          next.startedAt = new Date();
+        }
+      }
+      return updated;
+    });
+    await axios.post(`${BASE_URL}/api/orders/${id}/complete`, { totalTime: timeTaken });
   };
 
-  const handleOrderCancel = (orderId: string) => {
-    setOrders(prev => prev.filter(order => order.id !== orderId));
-    
-    // TODO: Send cancellation to backend
-    // await axios.post('/api/orders/cancel', { orderId });
+  const handleCancel = async (id: String) => {
+    setOrders(prev => prev.filter(o => o.id !== id));
+    await axios.delete(`${BASE_URL}/api/orders/${id}/cancel`);
   };
 
-  // Sort orders: preparing first, then pending by creation time
-  const sortedOrders = [...orders].sort((a, b) => {
-    if (a.status === 'preparing' && b.status === 'pending') return -1;
-    if (a.status === 'pending' && b.status === 'preparing') return 1;
+  const sorted = [...orders].sort((a, b) => {
+    if (a.status === 'preparing') return -1;
+    if (b.status === 'preparing') return 1;
     return a.createdAt.getTime() - b.createdAt.getTime();
   });
 
-  const currentOrder = sortedOrders.find(order => order.status === 'preparing');
-  const waitingOrders = sortedOrders.filter(order => order.status === 'pending');
-
   return (
-    <div className="min-h-screen bg-gradient-background p-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-card p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Kitchen Display</h1>
-        
-        {currentOrder && (
-          <div className="bg-orange-light p-4 rounded-lg">
-            <h2 className="text-xl font-semibold text-orange-dark mb-2">
-              Currently Preparing: {currentOrder.customerName}
-            </h2>
-            <p className="text-orange-primary">
-              Estimated time: {currentOrder.estimatedTime} minutes
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Order Cards */}
-      <div className="space-y-4">
-        {sortedOrders.map((order, index) => (
-          <OrderCard
-            key={order.id}
-            order={order}
-            isActive={order.status === 'preparing'}
-            onStart={() => handleOrderStart(order.id)}
-            onComplete={(totalTime) => handleOrderComplete(order.id, totalTime)}
-            onCancel={() => handleOrderCancel(order.id)}
-          />
-        ))}
-        
-        {orders.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-xl">No orders in queue</p>
-          </div>
-        )}
-      </div>
+    <div className="p-6 bg-orange-50 min-h-screen space-y-4">
+      <h1 className="text-4xl font-bold text-gray-800 mb-6">Kitchen Display</h1>
+      {sorted.map(order => (
+        <OrderCard
+          key={String(order.id)}
+          order={order}
+          isActive={order.status === 'preparing'}
+          onStart={() => handleStart(order.id)}
+          onComplete={(time) => handleComplete(order.id, time)}
+          onCancel={() => handleCancel(order.id)}
+        />
+      ))}
+      {orders.length === 0 && <p className="text-center text-gray-500">No orders available.</p>}
     </div>
   );
 };
